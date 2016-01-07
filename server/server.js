@@ -31,16 +31,22 @@ app.use(webpackHotMiddleware(compiler))
 app.use(handleRender)
 
 function handleRender(req, res) {
+
   match({routes, location: req.url}, (error, redirectLocation, renderProps) => {
     if (error) {
+
       res.status(500).send(error.message)
+
     } else if (redirectLocation) {
+
       res.redirect(302, redirectLocation.pathname + redirectLocation.search)
+
     } else if (renderProps) {
 
       // Query our mock API asynchronously
       fetchCounter(apiResult => {
         // Read the counter from the request, if provided
+
         const params = qs.parse(req.query)
         const counter = parseInt(params.counter, 10) || apiResult || 0
 
@@ -51,7 +57,7 @@ function handleRender(req, res) {
         const store = configureStore(initialState)
 
         const InitialComponent = (
-          <Provider store={store}>
+          <Provider store={store} key="provider">
             <RoutingContext {...renderProps} />
           </Provider>
         );
@@ -59,12 +65,12 @@ function handleRender(req, res) {
         // Grab the initial state from our Redux store
         const finalState = store.getState()
 
+        //render Initial Component to string
+        const InitialComponentToString = renderToString(InitialComponent)
+
         // Send the rendered page back to the client
-        res.send(renderFullPage(InitialComponent, finalState))
+        res.send(renderFullPage(InitialComponentToString, finalState))
       })
-
-      //res.status(200).send(renderToString(<RoutingContext {...renderProps} />))
-
 
     } else {
       res.status(404).send('Not found')
@@ -73,7 +79,7 @@ function handleRender(req, res) {
 
 }
 
-function renderFullPage(html, initialState) {
+function renderFullPage(htmlString, initialState) {
   return `
     <!doctype html>
     <html>
@@ -81,7 +87,7 @@ function renderFullPage(html, initialState) {
         <title>Redux Universal Example</title>
       </head>
       <body>
-        <div id="app">${html}</div>
+        <div id="app">${htmlString}</div>
         <script>
           window.__INITIAL_STATE__ = ${JSON.stringify(initialState)}
         </script>
